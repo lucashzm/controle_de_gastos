@@ -15,7 +15,7 @@
     .periodo h2 { margin: 0; font-size: 20px; }
     select, input, textarea, button { font: inherit; }
     .periodo select { padding: 9px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; }
-    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 18px; }
+    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 18px; }
     .card { background: #fff; border: 1px solid #e1e4e8; border-radius: 12px; padding: 18px; }
     .card .label { color: #666; font-size: 13px; margin-bottom: 8px; }
     .card .value { font-size: 26px; font-weight: 700; }
@@ -52,12 +52,16 @@
     th { color: #666; font-weight: 600; }
     .entrada { color: #237a3b; font-weight: 600; }
     .saida-texto { color: #b33b3b; font-weight: 600; }
+    @media (max-width: 1000px) {
+      .cards { grid-template-columns: repeat(2, 1fr); }
+    }
     @media (max-width: 850px) {
-      .cards, .dashboard { grid-template-columns: 1fr; }
+      .dashboard { grid-template-columns: 1fr; }
       form { grid-template-columns: repeat(2, 1fr); }
       .campo.largo, .campo.obs { grid-column: span 2; }
     }
     @media (max-width: 550px) {
+      .cards { grid-template-columns: 1fr; }
       form { grid-template-columns: 1fr; }
       .campo.largo, .campo.obs { grid-column: span 1; }
       .periodo { align-items: flex-start; gap: 10px; flex-direction: column; }
@@ -82,6 +86,7 @@
     <section class="cards">
       <div class="card"><div class="label">Entradas no período</div><div class="value" id="totalEntradas">R$ 0,00</div></div>
       <div class="card"><div class="label">Saídas no período</div><div class="value" id="totalSaidas">R$ 0,00</div></div>
+      <div class="card"><div class="label">Investido no período</div><div class="value" id="totalInvestido">R$ 0,00</div></div>
       <div class="card"><div class="label">Saldo do período</div><div class="value" id="saldo">R$ 0,00</div></div>
     </section>
 
@@ -92,11 +97,12 @@
         <div class="bar-labels"><span>Semana 1</span><span>Semana 2</span><span>Semana 3</span><span>Semana 4</span></div>
       </div>
       <div class="panel categorias">
-        <h3>Gastos por categoria</h3>
-        <div class="linha"><div class="cat-top"><span>Alimentação</span><strong>R$ 0,00</strong></div><div class="barra-fundo"><div class="barra" style="width: 0"></div></div></div>
-        <div class="linha"><div class="cat-top"><span>Transporte</span><strong>R$ 0,00</strong></div><div class="barra-fundo"><div class="barra" style="width: 0"></div></div></div>
-        <div class="linha"><div class="cat-top"><span>Contas</span><strong>R$ 0,00</strong></div><div class="barra-fundo"><div class="barra" style="width: 0"></div></div></div>
-        <div class="linha"><div class="cat-top"><span>Lazer</span><strong>R$ 0,00</strong></div><div class="barra-fundo"><div class="barra" style="width: 0"></div></div></div>
+        <h3>Saídas por categoria</h3>
+        <div class="linha"><div class="cat-top"><span>Alimentação</span><strong>R$ 0,00</strong></div><div class="barra-fundo"><div class="barra"></div></div></div>
+        <div class="linha"><div class="cat-top"><span>Transporte</span><strong>R$ 0,00</strong></div><div class="barra-fundo"><div class="barra"></div></div></div>
+        <div class="linha"><div class="cat-top"><span>Contas</span><strong>R$ 0,00</strong></div><div class="barra-fundo"><div class="barra"></div></div></div>
+        <div class="linha"><div class="cat-top"><span>Lazer</span><strong>R$ 0,00</strong></div><div class="barra-fundo"><div class="barra"></div></div></div>
+        <div class="linha"><div class="cat-top"><span>Investimento</span><strong>R$ 0,00</strong></div><div class="barra-fundo"><div class="barra"></div></div></div>
       </div>
     </section>
 
@@ -109,7 +115,7 @@
         <div class="campo"><label for="forma">Forma de pagamento</label><select id="forma"><option>PIX</option><option>Dinheiro</option><option>Débito</option><option>Cartão de crédito</option></select></div>
         <div class="campo cartao-extra" id="campoCartao"><label for="cartao">Cartão</label><select id="cartao"><option value="Nubank">Nubank</option><option value="Itaú">Itaú</option></select></div>
         <div class="campo"><label for="data">Data</label><input id="data" type="date" required></div>
-        <div class="campo"><label for="categoria">Categoria</label><select id="categoria"><option>Alimentação</option><option>Transporte</option><option>Contas</option><option>Lazer</option><option>Compras</option><option>Salário</option><option>Outros</option></select></div>
+        <div class="campo"><label for="categoria">Categoria</label><select id="categoria"><option>Alimentação</option><option>Transporte</option><option>Contas</option><option>Lazer</option><option>Compras</option><option>Investimento</option><option>Salário</option><option>Outros</option></select></div>
         <div class="campo obs"><label for="observacao">Observação</label><textarea id="observacao" placeholder="Opcional"></textarea></div>
         <div class="acoes"><button type="submit">Lançar</button></div>
       </form>
@@ -175,8 +181,10 @@
       const doPeriodo = lancamentos.filter(x => x.data.startsWith(periodo));
       const entradas = doPeriodo.filter(x => x.tipo === 'entrada').reduce((s,x) => s+x.valor, 0);
       const saidas = doPeriodo.filter(x => x.tipo === 'saida').reduce((s,x) => s+x.valor, 0);
+      const investido = doPeriodo.filter(x => x.tipo === 'saida' && x.categoria === 'Investimento').reduce((s,x) => s+x.valor, 0);
       document.getElementById('totalEntradas').textContent = valorBRL(entradas);
       document.getElementById('totalSaidas').textContent = valorBRL(saidas);
+      document.getElementById('totalInvestido').textContent = valorBRL(investido);
       document.getElementById('saldo').textContent = valorBRL(entradas - saidas);
 
       document.getElementById('lista').innerHTML = doPeriodo.map(x => `<tr><td>${x.data.split('-').reverse().join('/')}</td><td>${x.descricao}</td><td>${x.tipo === 'entrada' ? 'Entrada' : 'Saída'}</td><td>${x.forma}${x.forma === 'Cartão de crédito' ? ' — ' + x.cartao : ''}</td><td>${x.categoria}</td><td class="${x.tipo === 'entrada' ? 'entrada' : 'saida-texto'}">${x.tipo === 'entrada' ? '+' : '-'} ${valorBRL(x.valor)}</td></tr>`).join('');
@@ -184,9 +192,9 @@
       const semanas = [0,0,0,0];
       doPeriodo.filter(x=>x.tipo==='saida').forEach(x => { const d = Number(x.data.slice(8,10)); semanas[Math.min(3, Math.floor((d-1)/7))] += x.valor; });
       const max = Math.max(...semanas, 1);
-      document.getElementById('grafico').innerHTML = semanas.map(v => `<div class="bar-group"><div class="bar" style="height:${(v/max)*100}%" title="Saídas: ${valorBRL(v)}"></div><div class="bar saida" style="height:0"></div></div>`).join('');
+      document.getElementById('grafico').innerHTML = semanas.map(v => `<div class="bar-group"><div class="bar saida" style="height:${(v/max)*100}%" title="Saídas: ${valorBRL(v)}"></div></div>`).join('');
 
-      const categorias = ['Alimentação','Transporte','Contas','Lazer'];
+      const categorias = ['Alimentação','Transporte','Contas','Lazer','Investimento'];
       const valores = categorias.map(c => doPeriodo.filter(x=>x.tipo==='saida' && x.categoria===c).reduce((s,x)=>s+x.valor,0));
       const maxCat = Math.max(...valores, 1);
       document.querySelectorAll('.categorias .linha').forEach((linha,i) => { linha.querySelector('strong').textContent = valorBRL(valores[i]); linha.querySelector('.barra').style.width = `${valores[i]/maxCat*100}%`; });
