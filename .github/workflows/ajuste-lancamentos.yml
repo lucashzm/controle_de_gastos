@@ -1,0 +1,67 @@
+name: Ajustar lista de lançamentos
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  ajustar:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ajustar index.html
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          old_css = '.small{padding:6px 8px;font-size:9px}.modal{'
+          new_css = '.small{padding:6px 8px;font-size:9px}.pagination{display:flex;justify-content:center;align-items:center;gap:6px;padding:12px 4px 2px}.pagination button{padding:6px 10px;font-size:10px}.pagination button:disabled{opacity:.45;cursor:default}.pagination .pageInfo{font-size:10px;color:var(--muted);min-width:90px;text-align:center}.modal{'
+          if old_css not in s:
+              raise SystemExit('CSS alvo não encontrado')
+          s = s.replace(old_css, new_css, 1)
+
+          old_html = '</table></section></div><aside class="side">'
+          new_html = '</table><div class="pagination" id="listPagination"></div></section></div><aside class="side">'
+          if old_html not in s:
+              raise SystemExit('HTML da tabela não encontrado')
+          s = s.replace(old_html, new_html, 1)
+
+          old_render = 'function render(){let start=$("filterStart").value,end=$("filterEnd").value,filtered=rows.filter(r=>(!start||r.data>=start)&&(!end||r.data<=end)),e=filtered.filter(r=>r.tipo===\'entrada\').reduce((s,r)=>s+ +r.valor,0),s=filtered.filter(r=>r.tipo===\'saida\').reduce((s,r)=>s+ +r.valor,0);$("entradas").textContent=brl(e);$("saidas").textContent=brl(s);$("saldo").textContent=brl(e-s);$("count").textContent=filtered.length;$("listBody").innerHTML=rows.slice(0,50).map(r=>'
+          new_render = 'let listPage=1;const LIST_PAGE_SIZE=10;function getDisplayRows(){let seen=new Set();return rows.filter(r=>{if(r.gasto_fixo_id){let k=String(r.gasto_fixo_id);if(seen.has(k))return false;seen.add(k)}return true})}function renderListPagination(total){let pages=Math.max(1,Math.ceil(total/LIST_PAGE_SIZE));if(listPage>pages)listPage=pages;$("listPagination").innerHTML=pages>1?`<button class="secondary" ${listPage===1?"disabled":""} onclick="changeListPage(${listPage-1})">‹</button><span class="pageInfo">Página ${listPage} de ${pages}</span><button class="secondary" ${listPage===pages?"disabled":""} onclick="changeListPage(${listPage+1})">›</button>`:`<span class="pageInfo">${total} lançamento${total===1?"":"s"}</span>`}function changeListPage(page){listPage=page;render()}function render(){let start=$("filterStart").value,end=$("filterEnd").value,filtered=rows.filter(r=>(!start||r.data>=start)&&(!end||r.data<=end)),e=filtered.filter(r=>r.tipo===\'entrada\').reduce((s,r)=>s+ +r.valor,0),s=filtered.filter(r=>r.tipo===\'saida\').reduce((s,r)=>s+ +r.valor,0);$("entradas").textContent=brl(e);$("saidas").textContent=brl(s);$("saldo").textContent=brl(e-s);$("count").textContent=filtered.length;let displayRows=getDisplayRows(),pageRows=displayRows.slice((listPage-1)*LIST_PAGE_SIZE,listPage*LIST_PAGE_SIZE);$("listBody").innerHTML=pageRows.map(r=>'
+          if old_render not in s:
+              raise SystemExit('render alvo não encontrado')
+          s = s.replace(old_render, new_render, 1)
+
+          old_tail = "</td></tr>`).join('')||'<tr><td colspan=\"7\" class=\"muted\" style=\"text-align:center;padding:30px\">Nenhum lançamento cadastrado.</td></tr>';renderInvoice();renderCharts();renderParts()}"
+          new_tail = "</td></tr>`).join('')||'<tr><td colspan=\"7\" class=\"muted\" style=\"text-align:center;padding:30px\">Nenhum lançamento cadastrado.</td></tr>';renderListPagination(displayRows.length);renderInvoice();renderCharts();renderParts()}"
+          if old_tail not in s:
+              raise SystemExit('final do render não encontrado')
+          s = s.replace(old_tail, new_tail, 1)
+
+          old_filter = "$('filterApply').onclick=()=>{let a=$(\"filterStart\").value,b=$(\"filterEnd\").value;if(a&&b&&a>b){$(\"filterStart\").value=b;$(\"filterEnd\").value=a}render()};"
+          new_filter = "$('filterApply').onclick=()=>{let a=$(\"filterStart\").value,b=$(\"filterEnd\").value;if(a&&b&&a>b){$(\"filterStart\").value=b;$(\"filterEnd\").value=a}listPage=1;render()};"
+          if old_filter not in s:
+              raise SystemExit('filtro alvo não encontrado')
+          s = s.replace(old_filter, new_filter, 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commitar alteração
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Limitar últimos lançamentos a 10 e paginar"
+          git push
+      - name: Remover workflow temporário
+        run: |
+          git rm .github/workflows/ajuste-lancamentos.yml
+          git commit -m "Remover workflow temporário"
+          git push
