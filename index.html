@@ -5,78 +5,204 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Controle Financeiro</title>
   <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --text: #172033;
+      --muted: #748096;
+      --border: #e7ebf2;
+      --primary: #6757e8;
+      --primary-dark: #5546d4;
+      --green: #1aa36f;
+      --red: #e35d6a;
+      --orange: #e99a43;
+      --shadow: 0 12px 35px rgba(31, 41, 55, .07);
+      --radius: 18px;
+    }
+
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f8; color: #202124; }
-    header { background: #fff; border-bottom: 1px solid #ddd; padding: 20px 28px; }
-    header h1 { margin: 0 0 4px; font-size: 24px; }
-    header p { margin: 0; color: #666; }
-    main { max-width: 1200px; margin: 24px auto; padding: 0 20px; }
-    .periodo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
-    .periodo h2 { margin: 0; font-size: 20px; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      background: linear-gradient(135deg, #1f2340 0%, #302b62 100%);
+      color: white;
+      padding: 30px 28px 34px;
+    }
+    .header-inner { max-width: 1240px; margin: 0 auto; }
+    .brand { display: flex; align-items: center; gap: 13px; }
+    .brand-icon {
+      width: 44px; height: 44px; border-radius: 13px;
+      display: grid; place-items: center;
+      background: rgba(255,255,255,.13);
+      font-size: 22px;
+    }
+    header h1 { margin: 0; font-size: 25px; letter-spacing: -.5px; }
+    header p { margin: 6px 0 0 57px; color: rgba(255,255,255,.68); font-size: 14px; }
+
+    main { max-width: 1240px; margin: -12px auto 40px; padding: 0 20px; position: relative; }
+    .periodo {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; padding: 18px 20px;
+      background: rgba(255,255,255,.95); border: 1px solid var(--border);
+      border-radius: 16px; box-shadow: var(--shadow);
+    }
+    .periodo h2 { margin: 0; font-size: 18px; letter-spacing: -.2px; }
+    .periodo small { display: block; color: var(--muted); margin-top: 3px; }
+
     select, input, textarea, button { font: inherit; }
-    .periodo select { padding: 9px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; }
-    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 18px; }
-    .card { background: #fff; border: 1px solid #e1e4e8; border-radius: 12px; padding: 18px; }
-    .card .label { color: #666; font-size: 13px; margin-bottom: 8px; }
-    .card .value { font-size: 26px; font-weight: 700; }
-    .dashboard { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; margin-bottom: 18px; }
-    .panel { background: #fff; border: 1px solid #e1e4e8; border-radius: 12px; padding: 20px; }
-    .panel h3 { margin: 0 0 18px; font-size: 17px; }
-    .bars { height: 220px; display: flex; align-items: end; gap: 10px; border-bottom: 1px solid #ddd; padding: 10px 8px 0; }
-    .bar-group { flex: 1; height: 100%; display: flex; align-items: end; gap: 4px; justify-content: center; }
-    .bar { width: 45%; border-radius: 4px 4px 0 0; background: #5b7cfa; min-height: 2px; }
-    .bar.saida { background: #e66a6a; }
-    .bar-labels { display: flex; justify-content: space-around; font-size: 11px; color: #777; padding-top: 8px; }
-    .categorias .linha { margin-bottom: 14px; }
-    .cat-top { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
-    .barra-fundo { height: 8px; background: #eee; border-radius: 8px; overflow: hidden; }
-    .barra { height: 100%; background: #777; width: 0; }
+    select, input, textarea {
+      color: var(--text); background: var(--surface);
+      border: 1px solid var(--border); border-radius: 11px;
+      padding: 11px 13px; outline: none; transition: .2s ease;
+    }
+    select:focus, input:focus, textarea:focus {
+      border-color: rgba(103,87,232,.55);
+      box-shadow: 0 0 0 4px rgba(103,87,232,.09);
+    }
+    .periodo select { min-width: 170px; }
+
+    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 18px; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+      position: relative; overflow: hidden;
+    }
+    .card::after { content: ""; position: absolute; right: -25px; top: -25px; width: 90px; height: 90px; border-radius: 50%; background: #f1efff; }
+    .card .label { color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .45px; }
+    .card .value { margin-top: 9px; font-size: 25px; font-weight: 750; letter-spacing: -.7px; }
+    .card .sub { margin-top: 5px; color: var(--muted); font-size: 12px; }
+    #totalEntradas { color: var(--green); }
+    #totalSaidas { color: var(--red); }
+    #totalInvestido { color: var(--primary); }
+
+    .dashboard { display: grid; grid-template-columns: 1.45fr 1fr; gap: 18px; margin-bottom: 18px; }
+    .panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow);
+    }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .panel h3 { margin: 0; font-size: 16px; letter-spacing: -.2px; }
+    .panel-note { color: var(--muted); font-size: 12px; }
+
+    .bars {
+      height: 225px; display: flex; align-items: end; gap: 14px;
+      border-bottom: 1px solid var(--border); padding: 12px 10px 0;
+      background: linear-gradient(to top, rgba(103,87,232,.035) 1px, transparent 1px);
+      background-size: 100% 25%;
+      border-radius: 12px 12px 0 0;
+    }
+    .bar-group { flex: 1; height: 100%; display: flex; align-items: end; justify-content: center; gap: 5px; }
+    .bar { width: 36%; min-height: 3px; border-radius: 7px 7px 2px 2px; background: var(--green); transition: height .3s ease; }
+    .bar.saida { background: var(--red); }
+    .bar-labels { display: flex; justify-content: space-around; color: var(--muted); font-size: 11px; padding-top: 9px; }
+    .legend { display: flex; gap: 14px; margin-top: 13px; color: var(--muted); font-size: 11px; }
+    .legend span { display: flex; align-items: center; gap: 5px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot.entrada { background: var(--green); }
+    .dot.saida { background: var(--red); }
+
+    .categorias .linha { margin-bottom: 17px; }
+    .cat-top { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; margin-bottom: 7px; }
+    .cat-top span { color: #4e5b70; }
+    .cat-top strong { font-size: 12px; }
+    .barra-fundo { height: 8px; background: #edf0f5; border-radius: 20px; overflow: hidden; }
+    .barra { height: 100%; background: linear-gradient(90deg, #8275ee, #6757e8); width: 0; border-radius: 20px; transition: width .3s ease; }
+
     .form-panel { margin-bottom: 18px; }
-    form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-    .campo { display: flex; flex-direction: column; gap: 6px; }
-    .campo label { font-size: 13px; font-weight: 600; }
-    .campo input, .campo select, .campo textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; background: #fff; }
-    .campo textarea { resize: vertical; min-height: 40px; }
+    .form-header { margin-bottom: 18px; }
+    .form-header h3 { margin-bottom: 4px; }
+    .form-header p { margin: 0; color: var(--muted); font-size: 12px; }
+    form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+    .campo { display: flex; flex-direction: column; gap: 7px; }
+    .campo label { font-size: 12px; color: #536077; font-weight: 650; }
+    .campo input, .campo select, .campo textarea { width: 100%; }
+    .campo textarea { resize: vertical; min-height: 46px; }
     .campo.largo { grid-column: span 2; }
     .campo.obs { grid-column: span 3; }
     .acoes { display: flex; align-items: end; }
-    button { width: 100%; padding: 11px 16px; border: 0; border-radius: 8px; background: #202124; color: white; cursor: pointer; }
+    button {
+      width: 100%; padding: 12px 16px; border: 0; border-radius: 11px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white; cursor: pointer; font-weight: 700;
+      box-shadow: 0 8px 18px rgba(103,87,232,.22); transition: transform .15s ease, box-shadow .15s ease;
+    }
+    button:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(103,87,232,.28); }
+    button:active { transform: translateY(0); }
     .cartao-extra { display: none; }
-    .faturas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-    .fatura { border: 1px solid #ddd; border-radius: 9px; padding: 12px; }
-    .fatura strong { display: block; margin-bottom: 5px; }
-    .fatura span { color: #666; font-size: 13px; }
+
+    .fatura-card {
+      display: flex; justify-content: space-between; align-items: center; gap: 20px;
+      border: 1px solid var(--border); background: linear-gradient(135deg, #faf9ff, #fff);
+      border-radius: 15px; padding: 18px 20px;
+    }
+    .fatura-brand { display: flex; align-items: center; gap: 13px; }
+    .nubank-icon {
+      width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;
+      background: #5b2b82; color: white; font-weight: 800; font-size: 18px;
+    }
+    .fatura-brand strong { display: block; font-size: 14px; }
+    .fatura-brand span { display: block; color: var(--muted); font-size: 12px; margin-top: 3px; }
+    .fatura-valor { text-align: right; }
+    .fatura-valor strong { display: block; font-size: 20px; }
+    .fatura-valor span { color: var(--muted); font-size: 11px; }
+
     .lancamentos { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 11px 8px; border-bottom: 1px solid #eee; font-size: 13px; }
-    th { color: #666; font-weight: 600; }
-    .entrada { color: #237a3b; font-weight: 600; }
-    .saida-texto { color: #b33b3b; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    th, td { text-align: left; padding: 13px 9px; border-bottom: 1px solid #eef1f5; font-size: 12px; }
+    th { color: var(--muted); font-weight: 650; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
+    tbody tr:hover { background: #fafbfe; }
+    .entrada { color: var(--green); font-weight: 700; }
+    .saida-texto { color: var(--red); font-weight: 700; }
+    .tipo-pill { display: inline-flex; padding: 4px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+    .tipo-pill.entrada { background: #eaf8f2; }
+    .tipo-pill.saida { background: #fff0f1; }
+    .empty { text-align: center; color: var(--muted); padding: 28px; }
+
     @media (max-width: 1000px) {
       .cards { grid-template-columns: repeat(2, 1fr); }
+      .dashboard { grid-template-columns: 1fr; }
     }
     @media (max-width: 850px) {
-      .dashboard { grid-template-columns: 1fr; }
       form { grid-template-columns: repeat(2, 1fr); }
       .campo.largo, .campo.obs { grid-column: span 2; }
     }
     @media (max-width: 550px) {
+      header { padding: 24px 20px 30px; }
+      header p { margin-left: 0; margin-top: 9px; }
+      main { padding: 0 12px; }
       .cards { grid-template-columns: 1fr; }
       form { grid-template-columns: 1fr; }
       .campo.largo, .campo.obs { grid-column: span 1; }
-      .periodo { align-items: flex-start; gap: 10px; flex-direction: column; }
+      .periodo { align-items: flex-start; gap: 12px; flex-direction: column; }
+      .periodo select { width: 100%; }
+      .fatura-card { align-items: flex-start; flex-direction: column; }
+      .fatura-valor { text-align: left; }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>Controle Financeiro</h1>
-    <p>Lançamentos, faturas e visão geral</p>
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon">▣</div>
+        <h1>Controle Financeiro</h1>
+      </div>
+      <p>Uma visão simples e organizada do seu dinheiro.</p>
+    </div>
   </header>
 
   <main>
     <section class="periodo">
-      <h2>Dashboard</h2>
+      <div>
+        <h2>Visão geral</h2>
+        <small>Acompanhe seu mês de forma rápida.</small>
+      </div>
       <select id="periodo">
         <option value="2026-09">Setembro / 2026</option>
         <option value="2026-10">Outubro / 2026</option>
@@ -84,20 +210,21 @@
     </section>
 
     <section class="cards">
-      <div class="card"><div class="label">Entradas no período</div><div class="value" id="totalEntradas">R$ 0,00</div></div>
-      <div class="card"><div class="label">Saídas no período</div><div class="value" id="totalSaidas">R$ 0,00</div></div>
-      <div class="card"><div class="label">Investido no período</div><div class="value" id="totalInvestido">R$ 0,00</div></div>
-      <div class="card"><div class="label">Saldo do período</div><div class="value" id="saldo">R$ 0,00</div></div>
+      <div class="card"><div class="label">Entradas</div><div class="value" id="totalEntradas">R$ 0,00</div><div class="sub">Recebimentos no período</div></div>
+      <div class="card"><div class="label">Saídas</div><div class="value" id="totalSaidas">R$ 0,00</div><div class="sub">Gastos no período</div></div>
+      <div class="card"><div class="label">Investimentos</div><div class="value" id="totalInvestido">R$ 0,00</div><div class="sub">Valor destinado a investir</div></div>
+      <div class="card"><div class="label">Saldo</div><div class="value" id="saldo">R$ 0,00</div><div class="sub">Entradas menos saídas</div></div>
     </section>
 
     <section class="dashboard">
       <div class="panel">
-        <h3>Entradas x saídas</h3>
+        <div class="panel-head"><h3>Entradas x saídas</h3><span class="panel-note">Por semana</span></div>
         <div class="bars" id="grafico"></div>
-        <div class="bar-labels"><span>Semana 1</span><span>Semana 2</span><span>Semana 3</span><span>Semana 4</span></div>
+        <div class="bar-labels"><span>Sem. 1</span><span>Sem. 2</span><span>Sem. 3</span><span>Sem. 4</span></div>
+        <div class="legend"><span><i class="dot entrada"></i> Entradas</span><span><i class="dot saida"></i> Saídas</span></div>
       </div>
       <div class="panel categorias">
-        <h3>Saídas por categoria</h3>
+        <div class="panel-head"><h3>Saídas por categoria</h3><span class="panel-note">No período</span></div>
         <div class="linha"><div class="cat-top"><span>Alimentação</span><strong>R$ 0,00</strong></div><div class="barra-fundo"><div class="barra"></div></div></div>
         <div class="linha"><div class="cat-top"><span>Transporte</span><strong>R$ 0,00</strong></div><div class="barra-fundo"><div class="barra"></div></div></div>
         <div class="linha"><div class="cat-top"><span>Contas</span><strong>R$ 0,00</strong></div><div class="barra-fundo"><div class="barra"></div></div></div>
@@ -107,31 +234,40 @@
     </section>
 
     <section class="panel form-panel">
-      <h3>Novo lançamento</h3>
+      <div class="form-header">
+        <h3>Novo lançamento</h3>
+        <p>Registre uma entrada ou saída sem complicação.</p>
+      </div>
       <form id="formLancamento">
         <div class="campo"><label for="tipo">Tipo</label><select id="tipo"><option value="saida">Saída</option><option value="entrada">Entrada</option></select></div>
-        <div class="campo largo"><label for="descricao">Descrição</label><input id="descricao" required placeholder="Ex.: Mercado"></div>
+        <div class="campo largo"><label for="descricao">Descrição</label><input id="descricao" required placeholder="Ex.: Mercado, salário, aluguel..."></div>
         <div class="campo"><label for="valor">Valor</label><input id="valor" type="number" step="0.01" min="0.01" required placeholder="0,00"></div>
         <div class="campo"><label for="forma">Forma de pagamento</label><select id="forma"><option>PIX</option><option>Dinheiro</option><option>Débito</option><option>Cartão de crédito</option></select></div>
-        <div class="campo cartao-extra" id="campoCartao"><label for="cartao">Cartão</label><select id="cartao"><option value="Nubank">Nubank</option><option value="Itaú">Itaú</option></select></div>
+        <div class="campo cartao-extra" id="campoCartao"><label for="cartao">Cartão</label><select id="cartao"><option value="Nubank">Nubank</option></select></div>
         <div class="campo"><label for="data">Data</label><input id="data" type="date" required></div>
         <div class="campo"><label for="categoria">Categoria</label><select id="categoria"><option>Alimentação</option><option>Transporte</option><option>Contas</option><option>Lazer</option><option>Compras</option><option>Investimento</option><option>Salário</option><option>Outros</option></select></div>
         <div class="campo obs"><label for="observacao">Observação</label><textarea id="observacao" placeholder="Opcional"></textarea></div>
-        <div class="acoes"><button type="submit">Lançar</button></div>
+        <div class="acoes"><button type="submit">Adicionar lançamento</button></div>
       </form>
     </section>
 
     <section class="panel" style="margin-bottom:18px">
-      <h3>Faturas</h3>
-      <div class="faturas" id="faturas">
-        <div class="fatura"><strong>Nubank — próxima fatura</strong><span>R$ 0,00</span></div>
-        <div class="fatura"><strong>Itaú — próxima fatura</strong><span>R$ 0,00</span></div>
+      <div class="panel-head"><h3>Fatura</h3><span class="panel-note">Cartão Nubank</span></div>
+      <div class="fatura-card" id="fatura">
+        <div class="fatura-brand">
+          <div class="nubank-icon">N</div>
+          <div><strong>Nubank</strong><span>Próxima fatura</span></div>
+        </div>
+        <div class="fatura-valor"><strong>R$ 0,00</strong><span id="faturaInfo">Nenhum lançamento no cartão</span></div>
       </div>
     </section>
 
     <section class="panel lancamentos">
-      <h3>Últimos lançamentos</h3>
-      <table><thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Forma</th><th>Categoria</th><th>Valor</th></tr></thead><tbody id="lista"></tbody></table>
+      <div class="panel-head"><h3>Últimos lançamentos</h3><span class="panel-note" id="contador">0 lançamentos</span></div>
+      <table>
+        <thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Forma</th><th>Categoria</th><th>Valor</th></tr></thead>
+        <tbody id="lista"></tbody>
+      </table>
     </section>
   </main>
 
@@ -151,7 +287,6 @@
       const d = new Date(data + 'T12:00:00');
       const ano = d.getFullYear();
       const mes = d.getMonth();
-      // Regra inicial: depois do fechamento, a compra vai para a próxima fatura.
       const mesFatura = d.getDate() > diaFechamento ? mes + 1 : mes;
       return new Date(ano, mesFatura, diaFechamento, 12).toISOString().slice(0, 10);
     }
@@ -186,24 +321,38 @@
       document.getElementById('totalSaidas').textContent = valorBRL(saidas);
       document.getElementById('totalInvestido').textContent = valorBRL(investido);
       document.getElementById('saldo').textContent = valorBRL(entradas - saidas);
+      document.getElementById('contador').textContent = `${doPeriodo.length} ${doPeriodo.length === 1 ? 'lançamento' : 'lançamentos'}`;
 
-      document.getElementById('lista').innerHTML = doPeriodo.map(x => `<tr><td>${x.data.split('-').reverse().join('/')}</td><td>${x.descricao}</td><td>${x.tipo === 'entrada' ? 'Entrada' : 'Saída'}</td><td>${x.forma}${x.forma === 'Cartão de crédito' ? ' — ' + x.cartao : ''}</td><td>${x.categoria}</td><td class="${x.tipo === 'entrada' ? 'entrada' : 'saida-texto'}">${x.tipo === 'entrada' ? '+' : '-'} ${valorBRL(x.valor)}</td></tr>`).join('');
+      const lista = document.getElementById('lista');
+      if (!doPeriodo.length) {
+        lista.innerHTML = '<tr><td colspan="6" class="empty">Nenhum lançamento neste período.</td></tr>';
+      } else {
+        lista.innerHTML = doPeriodo.map(x => `<tr><td>${x.data.split('-').reverse().join('/')}</td><td>${x.descricao}</td><td><span class="tipo-pill ${x.tipo}">${x.tipo === 'entrada' ? 'Entrada' : 'Saída'}</span></td><td>${x.forma}${x.forma === 'Cartão de crédito' ? ' — Nubank' : ''}</td><td>${x.categoria}</td><td class="${x.tipo === 'entrada' ? 'entrada' : 'saida-texto'}">${x.tipo === 'entrada' ? '+' : '-'} ${valorBRL(x.valor)}</td></tr>`).join('');
+      }
 
-      const semanas = [0,0,0,0];
-      doPeriodo.filter(x=>x.tipo==='saida').forEach(x => { const d = Number(x.data.slice(8,10)); semanas[Math.min(3, Math.floor((d-1)/7))] += x.valor; });
-      const max = Math.max(...semanas, 1);
-      document.getElementById('grafico').innerHTML = semanas.map(v => `<div class="bar-group"><div class="bar saida" style="height:${(v/max)*100}%" title="Saídas: ${valorBRL(v)}"></div></div>`).join('');
+      const semanasEntrada = [0,0,0,0];
+      const semanasSaida = [0,0,0,0];
+      doPeriodo.forEach(x => {
+        const d = Number(x.data.slice(8,10));
+        const semana = Math.min(3, Math.floor((d-1)/7));
+        if (x.tipo === 'entrada') semanasEntrada[semana] += x.valor;
+        else semanasSaida[semana] += x.valor;
+      });
+      const max = Math.max(...semanasEntrada, ...semanasSaida, 1);
+      document.getElementById('grafico').innerHTML = semanasEntrada.map((v,i) => `<div class="bar-group"><div class="bar" style="height:${(v/max)*100}%" title="Entradas: ${valorBRL(v)}"></div><div class="bar saida" style="height:${(semanasSaida[i]/max)*100}%" title="Saídas: ${valorBRL(semanasSaida[i])}"></div></div>`).join('');
 
       const categorias = ['Alimentação','Transporte','Contas','Lazer','Investimento'];
       const valores = categorias.map(c => doPeriodo.filter(x=>x.tipo==='saida' && x.categoria===c).reduce((s,x)=>s+x.valor,0));
       const maxCat = Math.max(...valores, 1);
-      document.querySelectorAll('.categorias .linha').forEach((linha,i) => { linha.querySelector('strong').textContent = valorBRL(valores[i]); linha.querySelector('.barra').style.width = `${valores[i]/maxCat*100}%`; });
+      document.querySelectorAll('.categorias .linha').forEach((linha,i) => {
+        linha.querySelector('strong').textContent = valorBRL(valores[i]);
+        linha.querySelector('.barra').style.width = `${(valores[i]/maxCat)*100}%`;
+      });
 
-      const faturas = ['Nubank','Itaú'];
-      document.getElementById('faturas').innerHTML = faturas.map(cartao => {
-        const total = doPeriodo.filter(x=>x.tipo==='saida' && x.forma==='Cartão de crédito' && x.cartao===cartao).reduce((s,x)=>s+x.valor,0);
-        return `<div class="fatura"><strong>${cartao} — fatura do período</strong><span>${valorBRL(total)}</span></div>`;
-      }).join('');
+      const comprasCartao = doPeriodo.filter(x => x.tipo === 'saida' && x.forma === 'Cartão de crédito');
+      const totalFatura = comprasCartao.reduce((s,x) => s+x.valor, 0);
+      document.querySelector('#fatura .fatura-valor strong').textContent = valorBRL(totalFatura);
+      document.getElementById('faturaInfo').textContent = comprasCartao.length ? `${comprasCartao.length} compra${comprasCartao.length === 1 ? '' : 's'} no cartão no período` : 'Nenhum lançamento no cartão';
     }
 
     document.getElementById('periodo').addEventListener('change', atualizar);
