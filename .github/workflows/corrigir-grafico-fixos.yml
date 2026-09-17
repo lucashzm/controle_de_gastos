@@ -1,0 +1,51 @@
+name: Corrigir grafico de fixos
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  corrigir:
+    if: github.event.head_commit.message != 'Corrige logica do grafico de fixos'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Corrigir donut
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('gastos-fixos.html')
+          s = p.read_text(encoding='utf-8')
+
+          old_html = '''<div class="donutHead"><h3>📊 Distribuição dos fixos</h3><span class="muted">Ganhos x gastos previstos.</span></div><div class="donutWrap"><div class="donut" id="donut"><div class="donutCenter"><small>Total</small><b id="donutTotal">R$ 0</b></div></div></div><div class="donutLegend"><div class="legendRow"><span class="legendName"><i class="dot in"></i>Ganhos</span><b class="green" id="donutIn">R$ 0,00</b></div><div class="legendRow"><span class="legendName"><i class="dot out"></i>Gastos</span><b class="red" id="donutOut">R$ 0,00</b></div><div class="legendRow"><span class="legendName">Sobra</span><b class="purple" id="donutNet">R$ 0,00</b></div></div>'''
+          new_html = '''<div class="donutHead"><h3>📊 Distribuição dos fixos</h3><span class="muted">Como os ganhos previstos serão distribuídos.</span></div><div class="donutWrap"><div class="donut" id="donut"><div class="donutCenter"><small>Ganhos</small><b id="donutTotal">R$ 0</b></div></div></div><div class="donutLegend"><div class="legendRow"><span class="legendName"><i class="dot out"></i>Gastos</span><b class="red" id="donutOut">R$ 0,00</b></div><div class="legendRow"><span class="legendName"><i class="dot in"></i>Sobra</span><b class="green" id="donutNet">R$ 0,00</b></div></div>'''
+          if old_html not in s:
+              raise SystemExit('HTML do grafico nao encontrado')
+          s = s.replace(old_html, new_html, 1)
+
+          old_js = "const total=totalIn+totalOut,pIn=total?totalIn/total*100:50;$('donut').style.background=`conic-gradient(var(--green) 0 ${pIn}%,var(--red) ${pIn}% 100%)`;$('donutTotal').textContent=brl(total).replace(',00','');$('donutIn').textContent=brl(totalIn);$('donutOut').textContent=brl(totalOut);$('donutNet').textContent=brl(left)"
+          new_js = "const donutBase=Math.max(totalIn,0),donutSpent=Math.min(Math.max(totalOut,0),donutBase),donutLeft=Math.max(donutBase-totalOut,0),pOut=donutBase?donutSpent/donutBase*100:0;$('donut').style.background=donutBase?`conic-gradient(var(--red) 0 ${pOut}%,var(--green) ${pOut}% 100%)`:'var(--line)';$('donutTotal').textContent=brl(donutBase).replace(',00','');$('donutOut').textContent=brl(totalOut);$('donutNet').textContent=brl(donutLeft)"
+          if old_js not in s:
+              raise SystemExit('JS do grafico nao encontrado')
+          s = s.replace(old_js, new_js, 1)
+
+          p.write_text(s, encoding='utf-8')
+
+      - name: Commit e push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gastos-fixos.html .github/workflows/corrigir-grafico-fixos.yml
+          git commit -m "Corrige logica do grafico de fixos"
+          git push
+
+      - name: Remover workflow temporario
+        run: |
+          git rm .github/workflows/corrigir-grafico-fixos.yml
+          git commit -m "Remove workflow temporario do grafico"
+          git push
