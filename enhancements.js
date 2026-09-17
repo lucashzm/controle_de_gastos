@@ -37,12 +37,15 @@ window.renderCharts=function(){
 };
 function ensureInvestmentCard(){
  const cards=document.querySelector('.cards');
- if(!cards||$('investido'))return;
+ if(!cards)return;
+ const lanc=$('count')?.closest('.card');
+ // O contador de lançamentos não é útil no painel e ocupava espaço. Removemos o card.
+ if(lanc)lanc.remove();
+ if($('investido'))return;
  const card=document.createElement('div');
  card.className='card investmentCard';
  card.innerHTML='<div class="label">Investido</div><div class="money" id="investido">R$ 0,00</div>';
- const lanc=$('count')?.closest('.card');
- if(lanc)cards.insertBefore(card,lanc);else cards.appendChild(card);
+ cards.appendChild(card);
 }
 window.render=function(){
  ensureInvestmentCard();
