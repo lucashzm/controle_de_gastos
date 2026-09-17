@@ -5,6 +5,8 @@ const esc=window.esc||((s)=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<
 const baseStyle=`<style>
 .launchRow{cursor:pointer;transition:background .15s}.launchRow:hover{background:#faf9ff}
 .detailModalInfo{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:15px}.detailItem{padding:11px 12px;background:#f8f9fc;border:1px solid #eef1f5;border-radius:10px}.detailItem.full{grid-column:span 2}.detailItem label{display:block;font-size:9px;font-weight:800;color:#758096;text-transform:uppercase;margin-bottom:4px}.detailItem b{font-size:12px}.detailObs{white-space:pre-wrap;line-height:1.5;font-size:12px;color:#536077}.detailParts{margin-top:14px;border-top:1px solid #eef1f5;padding-top:12px}.detailPartsTitle{font-size:11px;font-weight:800;margin-bottom:7px}.detailPartRow{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #eef1f5;font-size:10px}.detailHint{margin-top:10px;font-size:10px;color:#758096}.pill.i{background:#f0efff;color:#5b2b82}.investmentHint{font-size:10px;color:#758096;margin-top:6px}
+.investmentCard .money{color:#5b2b82}.investmentCard{border-color:#e6def0}
+@media(max-width:1180px){.investmentCard{grid-column:auto}}
 @media(max-width:650px){.detailModalInfo{grid-template-columns:1fr}.detailItem.full{grid-column:auto}}
 </style>`;
 document.head.insertAdjacentHTML('beforeend',baseStyle);
@@ -33,9 +35,19 @@ window.renderCharts=function(){
  if($('donut'))$('donut').style.background=list.length?`conic-gradient(${stops})`:'#e9edf3';
  if($('catLegend'))$('catLegend').innerHTML=list.map((x,i)=>`<div class="catLegendRow"><i class="catDot" style="background:hsl(${245+i*38} 70% 58%)"></i><span>${esc(window.catName?window.catName(x[0]):x[0])}</span><b>${brl(x[1])}</b></div>`).join('')||'<span class="muted">Nenhuma saída no período.</span>';
 };
+function ensureInvestmentCard(){
+ const cards=document.querySelector('.cards');
+ if(!cards||$('investido'))return;
+ const card=document.createElement('div');
+ card.className='card investmentCard';
+ card.innerHTML='<div class="label">Investido</div><div class="money" id="investido">R$ 0,00</div>';
+ const lanc=$('count')?.closest('.card');
+ if(lanc)cards.insertBefore(card,lanc);else cards.appendChild(card);
+}
 window.render=function(){
- const a=$('filterStart')?.value||'',b=$('filterEnd')?.value||'',f=periodRows(a,b),e=f.filter(r=>r.tipo==='entrada').reduce((s,r)=>s+ +r.valor,0),s=f.filter(r=>r.tipo==='saida').reduce((s,r)=>s+ +r.valor,0);
- if($('entradas'))$('entradas').textContent=brl(e);if($('saidas'))$('saidas').textContent=brl(s);if($('saldo'))$('saldo').textContent=brl(e-s);if($('count'))$('count').textContent=f.length;
+ ensureInvestmentCard();
+ const a=$('filterStart')?.value||'',b=$('filterEnd')?.value||'',f=periodRows(a,b),e=f.filter(r=>r.tipo==='entrada').reduce((s,r)=>s+ +r.valor,0),s=f.filter(r=>r.tipo==='saida').reduce((s,r)=>s+ +r.valor,0),i=f.filter(r=>r.tipo==='investimento').reduce((s,r)=>s+ +r.valor,0);
+ if($('entradas'))$('entradas').textContent=brl(e);if($('saidas'))$('saidas').textContent=brl(s);if($('saldo'))$('saldo').textContent=brl(e-s);if($('investido'))$('investido').textContent=brl(i);if($('count'))$('count').textContent=f.length;
  const d=window.getDisplayRows?window.getDisplayRows():f,p=d.slice(((window.listPage||1)-1)*10,(window.listPage||1)*10);
  if($('listBody'))$('listBody').innerHTML=p.map(r=>`<tr class="launchRow" onclick="showLaunch(${String(r.id).replace(/[^0-9]/g,'')})"><td>${String(r.data).split('-').reverse().join('/')}</td><td><span class="pill ${r.tipo==='entrada'?'e':r.tipo==='investimento'?'i':'s'}">${r.tipo==='entrada'?'Entrada':r.tipo==='investimento'?'Investimento':'Saída'}</span></td><td><b>${esc(r.descricao)}</b>${r.gasto_fixo_id||r.ganho_fixo_id?' <small class="muted">• fixo</small>':''}</td><td>${esc(window.catName?window.catName(r.categoria_id):'—')}</td><td>${esc(r.forma_pagamento||'—')}</td><td><b>${brl(r.valor)}</b></td><td><div class="rowActions"><button class="small secondary" onclick="event.stopPropagation();editLaunch(${String(r.id).replace(/[^0-9]/g,'')})">✏️ Editar</button><button class="small danger" onclick="event.stopPropagation();deleteLaunch(${String(r.id).replace(/[^0-9]/g,'')})">🗑️ Excluir</button></div></td></tr>`).join('')||'<tr><td colspan="7" class="muted" style="text-align:center;padding:30px">Nenhum lançamento cadastrado.</td></tr>';
  if(window.renderListPagination)window.renderListPagination(d.length);if(window.renderInvoice)window.renderInvoice();window.renderCharts();if(window.renderParts)window.renderParts();
