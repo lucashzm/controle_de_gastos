@@ -15,20 +15,14 @@
     const res=await fetch(raw,{cache:'no-store'});
     if(!res.ok)throw new Error('Falha ao carregar a base: '+res.status);
     let html=await res.text();
-
-    // Exponha as mesmas referências usadas pelo código principal para os módulos adicionais.
     html=html.replace(
       'cats=c.data||[];rows=r.data||[];parts=p.data||[];payments=q.data||[];catFill();',
       'cats=c.data||[];rows=r.data||[];parts=p.data||[];payments=q.data||[];window.rows=rows;window.parts=parts;window.cats=cats;window.payments=payments;window.catName=catName;catFill();'
     );
-
-    // Insira os módulos antes do ÚLTIMO </body>. Usar replace() simples aqui pode atingir
-    // a string '</body>' existente dentro deste próprio loader e quebrar o HTML carregado.
-    const scripts='<script src="enhancements.js?v=4"><\\/script><script src="detail-fix.js?v=1"><\\/script><script src="investment-layout.js?v=4"><\\/script><script src="invoice-sync.js?v=1"><\\/script>';
+    const scripts='<script src="enhancements.js?v=4"><\\/script><script src="detail-fix.js?v=1"><\\/script><script src="investment-layout.js?v=4"><\\/script><script src="invoice-sync.js?v=2"><\\/script>';
     const bodyPos=html.toLowerCase().lastIndexOf('</body>');
     if(bodyPos<0) throw new Error('HTML base sem </body>');
     html=html.slice(0,bodyPos)+scripts+html.slice(bodyPos);
-
     document.open();
     document.write(html);
     document.close();
