@@ -12,61 +12,69 @@
 
   function period(){
     const start=document.getElementById('filterStart')?.value||'';
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(start))return null;
-    return {year:start.slice(0,4),month:Number(start.slice(5,7))};
+    if(/^\d{4}-\d{2}-\d{2}$/.test(start))return {year:start.slice(0,4),month:Number(start.slice(5,7))};
+    const now=new Date();
+    return {year:String(now.getFullYear()),month:now.getMonth()+1};
   }
 
-  function choose(select, wanted, textWanted){
-    if(!select)return false;
+  function findOption(select,wanted,textWanted){
+    if(!select)return null;
     const options=[...select.options];
-    let opt=options.find(o=>String(o.value)===String(wanted));
-    if(!opt && textWanted)opt=options.find(o=>norm(o.textContent)===norm(textWanted) || norm(o.textContent).startsWith(norm(textWanted)+' '));
-    if(!opt && textWanted)opt=options.find(o=>norm(o.textContent).includes(norm(textWanted)));
-    if(!opt)return false;
-    if(select.value!==opt.value){
-      select.value=opt.value;
-      select.dispatchEvent(new Event('change',{bubbles:true}));
-    }
-    return true;
+    return options.find(o=>String(o.value)===String(wanted))
+      || options.find(o=>norm(o.textContent)===norm(textWanted||''))
+      || options.find(o=>norm(o.textContent).startsWith(norm(textWanted||'')+' '))
+      || options.find(o=>norm(o.textContent).includes(norm(textWanted||'')));
   }
 
   function syncInvoice(){
     const p=period(),s=invoiceSelects();
-    if(!p||!s)return false;
+    if(!s)return false;
     const monthName=monthNames[p.month-1];
-    const changedMonth=choose(s.month,String(p.month),monthName);
-    const changedYear=choose(s.year,p.year,p.year);
-    return changedMonth||changedYear;
+    const mo=findOption(s.month,String(p.month),monthName);
+    const yr=findOption(s.year,p.year,p.year);
+    let changed=false;
+
+    if(mo && s.month.value!==mo.value){
+      s.month.value=mo.value;
+      changed=true;
+    }
+    if(yr && s.year.value!==yr.value){
+      s.year.value=yr.value;
+      changed=true;
+    }
+
+    // O componente da fatura usa o evento change para redesenhar o valor.
+    // Disparamos somente uma vez, depois de ajustar os dois selects.
+    if(changed){
+      s.month.dispatchEvent(new Event('change',{bubbles:true}));
+      s.year.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+    return changed;
   }
 
   function reinforce(){
     let n=0;
     const timer=setInterval(()=>{
-      n++;
       syncInvoice();
-      if(n>=10)clearInterval(timer);
-    },120);
+      n++;
+      if(n>=20)clearInterval(timer);
+    },100);
   }
 
-  function hook(){
-    if(typeof window.renderInvoice==='function' && !window.renderInvoice.__invoiceSync){
-      const original=window.renderInvoice;
-      const wrapped=function(...args){
-        const result=original.apply(this,args);
-        setTimeout(reinforce,0);
-        return result;
-      };
-      wrapped.__invoiceSync=true;
-      window.renderInvoice=wrapped;
-    }
-    syncInvoice();
-  }
-
-  const apply=document.getElementById('filterApply');
-  apply?.addEventListener('click',()=>setTimeout(reinforce,80));
+  // O filtro superior é a fonte da verdade: a fatura exibida deve representar
+  // o mesmo mês/ano do período selecionado.
+  document.getElementById('filterApply')?.addEventListener('click',()=>setTimeout(reinforce,50));
   document.getElementById('filterStart')?.addEventListener('change',reinforce);
-  hook();
-  const observer=new MutationObserver(()=>hook());
+
+  const observer=new MutationObserver(()=>{
+    if(invoiceSelects()){
+      syncInvoice();
+      reinforce();
+    }
+  });
   observer.observe(document.body,{childList:true,subtree:true});
+
+  // Primeira tentativa e novas tentativas após a montagem da interface.
+  syncInvoice();
   reinforce();
 })();
