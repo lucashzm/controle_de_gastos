@@ -1,110 +1,94 @@
 (()=>{
   const monthNames=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
   const norm=s=>String(s??'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  let realNow=null;
+
+  // Usa a data real de São Paulo quando disponível; se a consulta externa falhar,
+  // usa o relógio do navegador com o fuso de São Paulo.
+  async function loadRealDate(){
+    try{
+      const r=await fetch('https://worldtimeapi.org/api/timezone/America/Sao_Paulo',{cache:'no-store'});
+      if(r.ok){
+        const d=await r.json();
+        if(d.datetime) realNow=new Date(d.datetime);
+      }
+    }catch(e){}
+    if(!realNow) realNow=new Date(new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date()));
+    forceCurrentInvoice();
+  }
 
   function getPeriod(){
     const start=document.getElementById('filterStart')?.value||'';
     const end=document.getElementById('filterEnd')?.value||'';
-    if(/^\d{4}-\d{2}-\d{2}$/.test(start)){
-      return {year:start.slice(0,4),month:Number(start.slice(5,7))};
-    }
-    if(/^\d{4}-\d{2}-\d{2}$/.test(end)){
-      return {year:end.slice(0,4),month:Number(end.slice(5,7))};
-    }
-    const now=new Date();
-    return {year:String(now.getFullYear()),month:now.getMonth()+1};
+    if(/^\d{4}-\d{2}-\d{2}$/.test(start)) return {year:start.slice(0,4),month:Number(start.slice(5,7))};
+    if(/^\d{4}-\d{2}-\d{2}$/.test(end)) return {year:end.slice(0,4),month:Number(end.slice(5,7))};
+    const d=realNow||new Date();
+    return {year:String(d.getFullYear()),month:d.getMonth()+1};
   }
 
   function getInvoiceSelects(){
     const root=document.querySelector('.invoice');
     if(!root)return null;
     const selects=[...root.querySelectorAll('select')];
-    if(selects.length<2)return null;
-    return {month:selects[0],year:selects[1]};
+    return selects.length>=2?{month:selects[0],year:selects[1]}:null;
   }
 
   function findOption(select,wanted,text){
-    if(!select)return null;
     const wantedNorm=norm(text);
     return [...select.options].find(o=>String(o.value)===String(wanted))
       || [...select.options].find(o=>norm(o.textContent)===wantedNorm)
       || [...select.options].find(o=>norm(o.textContent).includes(wantedNorm));
   }
 
-  function setNativeValue(select,value){
-    if(!select)return false;
-    const proto=Object.getPrototypeOf(select);
-    const setter=Object.getOwnPropertyDescriptor(proto,'value')?.set;
-    if(setter)setter.call(select,value);else select.value=value;
-    return select.value===String(value);
+  function put(select,option){
+    if(!select||!option)return false;
+    select.value=option.value;
+    select.selectedIndex=option.index;
+    return select.value===option.value;
   }
 
-  function setInvoiceToPeriod(){
+  function forceCurrentInvoice(trigger=true){
     const s=getInvoiceSelects();
     if(!s)return false;
     const p=getPeriod();
     const mo=findOption(s.month,String(p.month),monthNames[p.month-1]);
     const yr=findOption(s.year,String(p.year),String(p.year));
-    if(!mo || !yr)return false;
-
-    const changedMonth=s.month.value!==mo.value;
-    const changedYear=s.year.value!==yr.value;
-    setNativeValue(s.month,mo.value);
-    setNativeValue(s.year,yr.value);
-
-    if(changedMonth || changedYear){
-      s.month.dispatchEvent(new Event('input',{bubbles:true}));
-      s.year.dispatchEvent(new Event('input',{bubbles:true}));
+    if(!mo||!yr)return false;
+    const changed=s.month.value!==mo.value || s.year.value!==yr.value;
+    put(s.month,mo); put(s.year,yr);
+    if(changed&&trigger){
       s.month.dispatchEvent(new Event('change',{bubbles:true}));
       s.year.dispatchEvent(new Event('change',{bubbles:true}));
-      if(typeof s.month.onchange==='function')s.month.onchange();
-      if(typeof s.year.onchange==='function')s.year.onchange();
+      requestAnimationFrame(()=>{put(s.month,mo);put(s.year,yr);});
+      setTimeout(()=>{put(s.month,mo);put(s.year,yr);},100);
+      setTimeout(()=>{put(s.month,mo);put(s.year,yr);},500);
+      setTimeout(()=>{put(s.month,mo);put(s.year,yr);},1200);
     }
-    return s.month.value===mo.value && s.year.value===yr.value;
-  }
-
-  function syncSoon(){
-    [0,100,300,700,1500,3000,5000].forEach(ms=>setTimeout(setInvoiceToPeriod,ms));
-  }
-
-  function wrapRender(){
-    const original=window.renderInvoice;
-    if(typeof original!=='function' || original.__periodSyncWrapped)return false;
-    const wrapped=function(){
-      const result=original.apply(this,arguments);
-      syncSoon();
-      return result;
-    };
-    wrapped.__periodSyncWrapped=true;
-    window.renderInvoice=wrapped;
     return true;
   }
 
+  // Durante a montagem da tela, a aplicação pode recriar a fatura e voltar para
+  // o mês padrão antigo. Mantemos o seletor alinhado por alguns segundos.
+  function bootstrapLock(){
+    let count=0;
+    const timer=setInterval(()=>{
+      forceCurrentInvoice(true);
+      if(++count>=30)clearInterval(timer);
+    },250);
+  }
+
   document.addEventListener('click',e=>{
-    if(e.target.closest('#filterApply'))syncSoon();
+    if(e.target.closest('#filterApply')) bootstrapLock();
   },true);
+
   document.addEventListener('change',e=>{
-    if(e.target.closest('#filterStart,#filterEnd'))syncSoon();
+    if(e.target.closest('#filterStart,#filterEnd')) bootstrapLock();
   },true);
 
-  let observerTimer=0;
-  const observer=new MutationObserver(()=>{
-    clearTimeout(observerTimer);
-    observerTimer=setTimeout(()=>{
-      wrapRender();
-      setInvoiceToPeriod();
-    },50);
-  });
-  observer.observe(document.body,{childList:true,subtree:true});
+  const observer=new MutationObserver(()=>forceCurrentInvoice(false));
+  const startObserver=()=>{if(document.body)observer.observe(document.body,{childList:true,subtree:true});};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startObserver);else startObserver();
 
-  wrapRender();
-  syncSoon();
-  // A base original pode terminar de carregar depois deste script e recriar a fatura.
-  // Durante a inicialização mantemos o seletor alinhado ao período escolhido.
-  let tries=0;
-  const bootstrap=setInterval(()=>{
-    wrapRender();
-    setInvoiceToPeriod();
-    if(++tries>=20)clearInterval(bootstrap);
-  },500);
+  loadRealDate();
+  bootstrapLock();
 })();
