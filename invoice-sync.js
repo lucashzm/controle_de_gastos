@@ -4,8 +4,12 @@
 
   function getPeriod(){
     const start=document.getElementById('filterStart')?.value||'';
+    const end=document.getElementById('filterEnd')?.value||'';
     if(/^\d{4}-\d{2}-\d{2}$/.test(start)){
       return {year:start.slice(0,4),month:Number(start.slice(5,7))};
+    }
+    if(/^\d{4}-\d{2}-\d{2}$/.test(end)){
+      return {year:end.slice(0,4),month:Number(end.slice(5,7))};
     }
     const now=new Date();
     return {year:String(now.getFullYear()),month:now.getMonth()+1};
@@ -48,7 +52,6 @@
     setNativeValue(s.month,mo.value);
     setNativeValue(s.year,yr.value);
 
-    // A fatura existente pode usar onchange diretamente; disparamos ambos os formatos.
     if(changedMonth || changedYear){
       s.month.dispatchEvent(new Event('input',{bubbles:true}));
       s.year.dispatchEvent(new Event('input',{bubbles:true}));
@@ -61,33 +64,47 @@
   }
 
   function syncSoon(){
-    [0,80,250,600,1200,2200].forEach(ms=>setTimeout(setInvoiceToPeriod,ms));
+    [0,100,300,700,1500,3000,5000].forEach(ms=>setTimeout(setInvoiceToPeriod,ms));
   }
 
-  // O render original da fatura pode reconstruir os selects. Depois de cada render,
-  // reaplicamos o mês/ano do período para que Outubro não volte automaticamente.
-  const originalRenderInvoice=window.renderInvoice;
-  if(typeof originalRenderInvoice==='function' && !originalRenderInvoice.__periodSyncWrapped){
+  function wrapRender(){
+    const original=window.renderInvoice;
+    if(typeof original!=='function' || original.__periodSyncWrapped)return false;
     const wrapped=function(){
-      const result=originalRenderInvoice.apply(this,arguments);
+      const result=original.apply(this,arguments);
       syncSoon();
       return result;
     };
     wrapped.__periodSyncWrapped=true;
     window.renderInvoice=wrapped;
+    return true;
   }
 
-  document.getElementById('filterApply')?.addEventListener('click',syncSoon);
-  document.getElementById('filterStart')?.addEventListener('change',syncSoon);
-  document.getElementById('filterEnd')?.addEventListener('change',syncSoon);
+  document.addEventListener('click',e=>{
+    if(e.target.closest('#filterApply'))syncSoon();
+  },true);
+  document.addEventListener('change',e=>{
+    if(e.target.closest('#filterStart,#filterEnd'))syncSoon();
+  },true);
 
   let observerTimer=0;
   const observer=new MutationObserver(()=>{
-    if(!getInvoiceSelects())return;
     clearTimeout(observerTimer);
-    observerTimer=setTimeout(()=>setInvoiceToPeriod(),30);
+    observerTimer=setTimeout(()=>{
+      wrapRender();
+      setInvoiceToPeriod();
+    },50);
   });
   observer.observe(document.body,{childList:true,subtree:true});
 
+  wrapRender();
   syncSoon();
+  // A base original pode terminar de carregar depois deste script e recriar a fatura.
+  // Durante a inicialização mantemos o seletor alinhado ao período escolhido.
+  let tries=0;
+  const bootstrap=setInterval(()=>{
+    wrapRender();
+    setInvoiceToPeriod();
+    if(++tries>=20)clearInterval(bootstrap);
+  },500);
 })();
