@@ -34,7 +34,7 @@ window.renderCharts=function(){
   if($('barlabels'))$('barlabels').innerHTML=months.map(m=>`<span>${m.n}</span>`).join('');
 
   // Gastos por categoria respeitando o período aplicado no painel.
-  const a=$('filterStart')?.value||'',b=$('filterEnd')?.value||{},by={};
+  const a=$('filterStart')?.value||'',b=$('filterEnd')?.value||'',by={};
   const period=window.periodRows?window.periodRows(a,b):((window.rows||[]).filter(r=>(!a||r.data>=a)&&(!b||r.data<=b)));
   period.filter(r=>r.tipo==='saida').forEach(r=>{
     by[r.categoria_id||0]=(by[r.categoria_id||0]||0)+Number(r.valor||0);
@@ -55,7 +55,5 @@ window.renderCharts=function(){
   ).join('')||'<span class="muted">Nenhuma saída no período.</span>';
 };
 
-// Caso o painel já tenha terminado de carregar antes deste arquivo,
-// redesenha imediatamente com a nova regra.
 setTimeout(()=>{try{window.renderCharts()}catch(e){console.error(e)}},0);
 })();
